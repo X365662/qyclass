@@ -22,10 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // 延迟加载，确保 Provider 已经初始化
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
   void _loadData() {
@@ -55,106 +52,80 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('课表'),
+        title: Consumer<AppProvider>(
+          builder: (context, app, _) =>
+              Text('第${app.currentWeek}周 · 课表'),
+        ),
         centerTitle: true,
         actions: [
-          Consumer<ScheduleProvider>(
-            builder: (context, sp, _) => IconButton(
-              icon: const Icon(Icons.add),
-              tooltip: '手动添加课程',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AddCourseScreen()),
-                ).then((added) {
-                  if (added == true) {
-                    _loadData();
-                  }
-                });
-              },
-            ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: '手动添加课程',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AddCourseScreen()),
+              ).then((added) {
+                if (added == true) _loadData();
+              });
+            },
           ),
         ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // 周次选择器（纯展示）
+            // 周次选择器
             Consumer<AppProvider>(
               builder: (context, app, _) => WeekSelector(
                 currentWeek: app.currentWeek,
                 totalWeeks: app.totalWeeks,
                 weekDateRange: app.weekDateRange,
+                onPrevious: app.previousWeek,
+                onNext: app.nextWeek,
               ),
             ),
 
-            // 课表区域（支持左右滑动切换周次）
+            // 课表区域 — GestureDetector 在外层，覆盖所有子状态
             Expanded(
-              child: Consumer2<ScheduleProvider, AppProvider>(
-                builder: (context, scheduleProvider, appProvider, _) {
-                  if (scheduleProvider.isLoading) {
-                    return const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('加载课表中...'),
-                        ],
-                      ),
-                    );
+              child: GestureDetector(
+                onHorizontalDragEnd: (details) {
+                  if (details.primaryVelocity == null) return;
+                  final app = context.read<AppProvider>();
+                  if (details.primaryVelocity! < -300) {
+                    app.nextWeek();
+                  } else if (details.primaryVelocity! > 300) {
+                    app.previousWeek();
                   }
+                },
+                child: Consumer2<ScheduleProvider, AppProvider>(
+                  builder: (context, sp, app, _) {
+                    if (sp.isLoading) return _buildLoading(cs);
+                    if (!sp.hasData) return _buildEmptyState(cs);
 
-                  if (!scheduleProvider.hasData) {
-                    return _buildEmptyState();
-                  }
+                    final courseMap = <String, Course>{};
+                    for (final c in sp.courses) {
+                      courseMap[c.id] = c;
+                    }
 
-                  // 构建 courseMap
-                  final courseMap = <String, Course>{};
-                  for (final course in scheduleProvider.courses) {
-                    courseMap[course.id] = course;
-                  }
+                    final weekSchedules = sp.getSchedulesForWeek(app.currentWeek);
 
-                  // 获取当前周的排课
-                  final weekSchedules = scheduleProvider.getSchedulesForWeek(appProvider.currentWeek);
+                    if (weekSchedules.isEmpty && sp.courses.isNotEmpty) {
+                      return _buildNoCourses(app.currentWeek, cs);
+                    }
 
-                  // 如果没有课程但数据不为空，可能还没开学或当前周无课
-                  if (weekSchedules.isEmpty && scheduleProvider.courses.isNotEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.event_busy, size: 48, color: Colors.grey[400]),
-                          const SizedBox(height: 12),
-                          Text(
-                            '第${appProvider.currentWeek}周没有课程安排',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 15),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return GestureDetector(
-                    onHorizontalDragEnd: (details) {
-                      if (details.primaryVelocity == null) return;
-                      if (details.primaryVelocity! < -300) {
-                        // 向左滑 → 下一周
-                        appProvider.nextWeek();
-                      } else if (details.primaryVelocity! > 300) {
-                        // 向右滑 → 上一周
-                        appProvider.previousWeek();
-                      }
-                    },
-                    child: ScheduleGrid(
+                    return ScheduleGrid(
                       schedules: weekSchedules,
-                      colorMap: scheduleProvider.colorMap,
+                      colorMap: sp.colorMap,
                       courseMap: courseMap,
                       onCourseTap: _showCourseDetail,
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -163,38 +134,67 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildLoading(ColorScheme cs) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today, size: 64, color: Colors.grey[300]),
+          CircularProgressIndicator(color: cs.primary),
+          const SizedBox(height: 16),
+          Text('加载课表中...', style: TextStyle(color: cs.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoCourses(int week, ColorScheme cs) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.event_busy, size: 48, color: cs.outlineVariant),
+          const SizedBox(height: 12),
+          Text(
+            '第$week周没有课程安排',
+            style: TextStyle(color: cs.onSurface, fontSize: 15),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '← 左右滑动查看其他周 →',
+            style: TextStyle(color: cs.outlineVariant, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ColorScheme cs) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.calendar_today, size: 64, color: cs.outlineVariant),
           const SizedBox(height: 16),
           Text(
             '还没有课表数据',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[600],
+              color: cs.onSurface,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '从教务系统导入或手动添加课程',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
+          FilledButton.icon(
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
               ).then((success) {
-                if (success == true) {
-                  _loadData();
-                }
+                if (success == true) _loadData();
               });
             },
             icon: const Icon(Icons.download),
@@ -206,9 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const AddCourseScreen()),
               ).then((added) {
-                if (added == true) {
-                  _loadData();
-                }
+                if (added == true) _loadData();
               });
             },
             icon: const Icon(Icons.add),

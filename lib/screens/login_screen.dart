@@ -226,8 +226,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 GestureDetector(
                   onTap: _isLoading ? null : _getCaptcha,
                   child: Container(
-                    width: 100,
-                    height: 48,
+                    width: 160,
+                    height: 60,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey[300]!),
                       borderRadius: BorderRadius.circular(8),
@@ -309,7 +309,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         return ClipRRect(
           borderRadius: BorderRadius.circular(7),
-          child: Image.memory(bytes, width: 100, height: 48, fit: BoxFit.cover),
+          child: Image.memory(bytes, width: 160, height: 60, fit: BoxFit.cover),
         );
       } catch (_) {
         // base64 解码失败，重置并显示占位

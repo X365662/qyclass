@@ -24,55 +24,80 @@ class CourseCard extends StatelessWidget {
       child: Container(
         height: height,
         margin: const EdgeInsets.all(1.5),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: color.withOpacity(0.4),
-            width: 0.5,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              courseName,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: _darkenColor(color),
-                height: 1.2,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: color.withAlpha(30),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
             ),
-            if (location != null && location!.isNotEmpty) ...[
-              const Spacer(),
-              Text(
-                location!,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: color.withOpacity(0.8),
+          ],
+        ),
+        child: Row(
+          children: [
+            // 左侧彩色 accent bar
+            Container(
+              width: 4,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  bottomLeft: Radius.circular(8),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-            ],
+            ),
+            // 卡片主体
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(60),
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      courseName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _textColor(color),
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (location != null && location!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        location!,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: color.withAlpha(180),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// 让颜色更深一点（用于文字）
-  Color _darkenColor(Color color) {
-    return Color.fromARGB(
-      color.alpha,
-      (color.red * 0.6).round().clamp(0, 255),
-      (color.green * 0.6).round().clamp(0, 255),
-      (color.blue * 0.6).round().clamp(0, 255),
-    );
+  Color _textColor(Color bg) {
+    // 根据亮度自适应文字颜色
+    final luminance = (0.299 * bg.red + 0.587 * bg.green + 0.114 * bg.blue);
+    return luminance > 140 ? bg.withAlpha(220) : bg;
   }
 }

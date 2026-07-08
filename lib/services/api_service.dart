@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // 默认爬虫地址（本地开发用，端口与 scraper/main.py 一致）
-  static const String _defaultBaseUrl = 'http://172.23.112.1:8007/api/v1';
+  static const String _defaultBaseUrl = 'http://39.107.112.160:8007/api/v1';
   static String baseUrl = _defaultBaseUrl;
 
   late Dio _dio;
