@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>轻院课表 - 登录测试</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Microsoft YaHei',sans-serif; background:#f0f2f5; padding:16px; }
+.container { max-width:480px; margin:0 auto; }
+h2 { text-align:center; color:#1976D2; margin-bottom:6px; font-size:20px; }
+.subtitle { text-align:center; color:#888; font-size:13px; margin-bottom:18px; }
+
+.card { background:#fff; border-radius:12px; padding:18px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+label { display:block; font-size:13px; font-weight:600; color:#333; margin-bottom:4px; }
+input[type=text], input[type=password] {
+  width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:8px;
+  font-size:15px; margin-bottom:12px; outline:none;
+}
+input:focus { border-color:#1976D2; }
+
+.captcha-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:8px; }
+.captcha-box {
+  border:3px solid #e0e0e0; border-radius:10px; padding:10px; cursor:pointer;
+  text-align:center; background:#fafafa; transition:.15s;
+}
+.captcha-box:hover { border-color:#90caf9; background:#f5f9ff; }
+.captcha-box.sel { border-color:#1976D2; background:#e3f2fd; box-shadow:0 0 8px rgba(25,118,210,.25); }
+.captcha-box img { height:38px; display:block; margin:0 auto 4px; }
+.captcha-box .tag { font-size:10px; color:#999; }
+
+.btn {
+  width:100%; padding:13px; background:#1976D2; color:#fff; border:none;
+  border-radius:10px; font-size:16px; font-weight:600; cursor:pointer; margin-top:6px;
+  transition:.2s;
+}
+.btn:hover { background:#1565C0; }
+.btn:disabled { background:#bbb; cursor:not-allowed; }
+
+.result {
+  margin-top:14px; padding:14px 16px; border-radius:10px; font-size:14px;
+  line-height:1.6; display:none; word-break:break-all;
+}
+.result.show { display:block; }
+.result.ok { background:#e8f5e9; color:#1b5e20; border:1px solid #a5d6a7; }
+.result.fail { background:#fff3e0; color:#e65100; border:1px solid #ffcc02; }
+.result.err { background:#ffebee; color:#b71c1c; border:1px solid #ef9a9a; }
+.result .token { font-size:12px; background:#fff; padding:8px; border-radius:6px; margin-top:8px; word-break:break-all; }
+
+.btn-row { display:flex; gap:8px; margin-top:6px; }
+.btn-row button { flex:1; }
+.btn-outline { background:#fff; color:#1976D2; border:2px solid #1976D2; }
+.btn-outline:hover { background:#e3f2fd; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>轻院课表 - 登录测试</h2>
+  <p class="subtitle">选一张看得清的验证码 → 填信息 → 登录</p>
+
+  <div class="card">
+    <label>学号</label>
+    <input type="text" id="studentId" placeholder="你的学号" autocomplete="off">
+
+    <label>密码</label>
+    <input type="password" id="password" placeholder="教务系统密码">
+
+    <label>验证码答案</label>
+    <input type="text" id="captchaCode" placeholder="文字验证码输入4个字符 / 算式验证码输入计算结果" autocomplete="off">
+    <div style="font-size:11px;color:#999;margin-top:-8px;margin-bottom:4px;">
+      ⚠ 文字型：输入4个字符 &nbsp;|&nbsp; 🧮 算式型：算出来输入数字答案
+    </div>
+
+    <label>选一张看得清的点一下：</label>
+    <div class="captcha-grid" id="captchaGrid"></div>
+    <input type="hidden" id="selectedCaptchaId">
+
+    <button class="btn" id="loginBtn" onclick="doLogin()" disabled>⬆ 先点选一张验证码</button>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="refreshAll()" style="font-size:13px;padding:8px;">🔄 换一批验证码</button>
+    </div>
+  </div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const API = '/api/v1';  // 同源，无CORS问题
+let selectedCaptchaId = null;
+
+function showResult(cls, html) {
+  const r = document.getElementById('result');
+  r.className = 'result show ' + cls;
+  r.innerHTML = html;
+}
+
+function hideResult() {
+  document.getElementById('result').className = 'result';
+}
+
+async function loadCaptchas() {
+  const grid = document.getElementById('captchaGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#999;padding:16px;">加载验证码中...</div>';
+
+  const items = [];
+  for (let i = 0; i < 4; i++) {
+    try {
+      const resp = await fetch(API + '/captcha', { method: 'POST' });
+      const data = await resp.json();
+      items.push(data);
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  grid.innerHTML = '';
+  selectedCaptchaId = null;
+  document.getElementById('loginBtn').disabled = true;
+  document.getElementById('loginBtn').textContent = '⬆ 先点选一张验证码';
+  document.getElementById('selectedCaptchaId').value = '';
+
+  items.forEach((data, i) => {
+    const div = document.createElement('div');
+    div.className = 'captcha-box';
+    div.onclick = () => {
+      document.querySelectorAll('.captcha-box').forEach(b => b.classList.remove('sel'));
+      div.classList.add('sel');
+      selectedCaptchaId = data.captcha_id;
+      document.getElementById('selectedCaptchaId').value = data.captcha_id;
+      document.getElementById('loginBtn').disabled = false;
+      document.getElementById('loginBtn').textContent = '🚀 登 录';
+      hideResult();
+    };
+    div.innerHTML = `
+      <img src="data:image/png;base64,${data.image_base64}" alt="验证码${i+1}">
+      <div class="tag">#${i+1} · ${data.captcha_id.substring(0,10)}...</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function refreshAll() {
+  hideResult();
+  document.getElementById('captchaCode').value = '';
+  loadCaptchas();
+}
+
+async function doLogin() {
+  const studentId = document.getElementById('studentId').value.trim();
+  const password = document.getElementById('password').value;
+  const captchaCode = document.getElementById('captchaCode').value.trim();
+
+  if (!studentId || !password || !captchaCode) {
+    showResult('fail', '⚠️ 请填写学号、密码和验证码');
+    return;
+  }
+  if (!selectedCaptchaId) {
+    showResult('fail', '⚠️ 请先点选一张验证码图片');
+    return;
+  }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 登录中...';
+  hideResult();
+
+  try {
+    const resp = await fetch(API + '/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        student_id: studentId,
+        password: password,
+        captcha_id: selectedCaptchaId,
+        captcha_code: captchaCode
+      })
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      showResult('ok', `
+        <b>🎉 登录成功！</b><br><br>
+        ${data.user_info?.name ? '姓名：<b>' + data.user_info.name + '</b><br>' : ''}
+        ${data.user_info?.department ? '院系：' + data.user_info.department + '<br>' : ''}
+        <div class="token"><b>Token:</b><br>${data.token}</div>
+        <br>
+        <b>📋 下一步：复制上面 Token</b>，然后调用 GET /api/v1/schedule 获取课表<br>
+        <a href="http://localhost:8000/docs" target="_blank">打开 API 文档 →</a>
+      `);
+    } else {
+      const msg = data.message || '登录失败';
+      showResult('fail', '❌ <b>' + msg + '</b><br><br>点上方按钮换验证码后重试');
+      // 自动刷新
+      // 不自动刷新，让用户看清楚错误信息
+      document.getElementById('loginBtn').disabled = false;
+      document.getElementById('loginBtn').textContent = '🔄 重试登录';
+    }
+  } catch(e) {
+    showResult('err', '🔌 网络错误：' + e.message + '<br><br>请确认爬虫服务正在运行');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🚀 重试登录';
+}
+
+loadCaptchas();
+</script>
+</body>
+</html>

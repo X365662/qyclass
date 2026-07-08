@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST http://localhost:8000/api/v1/captcha)",
+      "Bash(echo \"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\" | base64 -d > /tmp/captcha.png 2>/dev/null; echo \"Saved to /tmp/captcha.png\")",
+      "Bash(C:/Users/X1/AppData/Local/Programs/Python/Python314/python.exe -c ' *)",
+      "Bash(\"C:/Users/X1/AppData/Local/Programs/Python/Python314/python.exe\" -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'captcha_id: {d[\\\\\"captcha_id\\\\\"][:16]}...'\\); print\\(f'图片大小: {len\\(d[\\\\\"image_base64\\\\\"]\\)} bytes \\(Base64\\)'\\)\")",
+      "Bash(curl -s http://localhost:8000/api/v1/buildings)",
+      "Bash(\"C:/Users/X1/AppData/Local/Programs/Python/Python314/python.exe\" -m pip install ddddocr)",
+      "Bash(start d:/Code/QYclass/captcha.png)",
+      "Bash(\"C:/Users/X1/AppData/Local/Programs/Python/Python314/python.exe\" -m pip install onnxruntime)",
+      "Bash(\"C:/Users/X1/AppData/Local/Programs/Python/Python314/python.exe\" -m pip install Pillow)",
+      "Bash(start d:/Code/QYclass/scraper/test_login.html)",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(curl -s -X POST http://localhost:8000/api/v1/login -H \"Content-Type: application/json\" -d '{\"student_id\":\"test\",\"password\":\"test\",\"captcha_id\":\"test\",\"captcha_code\":\"test\"}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/test)",
+      "Bash(curl -s -o /dev/null -w \"test page: %{http_code}\" http://localhost:8000/test)"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

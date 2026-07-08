@@ -1,0 +1,18 @@
+# Render 部署配置
+# 部署步骤：
+# 1. 把整个 scraper/ 目录上传到 GitHub
+# 2. 在 Render.com 创建新 Web Service → 连接 GitHub 仓库
+# 3. 设置 Root Directory = scraper
+# 4. Render 自动读取本文件
+
+services:
+  - type: web
+    name: qyclass-scraper
+    runtime: python
+    rootDir: scraper
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"

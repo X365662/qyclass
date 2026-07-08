@@ -1,0 +1,38 @@
+# Flutter
+.dart_tool/
+.packages
+build/
+*.iml
+.idea/
+.vscode/
+*.lock
+
+# Android
+android/app/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+*.swp
+*.swo
+.DS_Store
+
+# Debug / temp files
+captcha*.png
+debug_captcha.png
+schedule_data.json
+schedule_page.html
+schedule_page.json
+schedule_result.json
+classroom_full.html
+classroom_page.html
+classroom_script.js

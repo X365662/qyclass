@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 install *)",
+      "Bash(flutter analyze *)",
+      "WebFetch(domain:jws.qgxy.cn)",
+      "Bash(curl -s -o - -w \"\\\\n\\\\n=== HTTP Status: %{http_code} ===\\\\n=== Redirect URL: %{redirect_url} ===\\\\n\" \"http://jws.qgxy.cn\")",
+      "Bash(curl -s -o - -L --max-time 10 \"https://jws.qgxy.cn\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP: %{http_code}\" --max-time 10 \"http://jws.qgxy.cn/default2.aspx\")",
+      "Bash(nslookup jws.qgxy.cn)",
+      "Bash(curl -s -L -k --max-time 15 \"https://jws.qgxy.cn\")",
+      "Bash(curl -s -L -k --max-time 15 \"https://jws.qgxy.cn/login\")",
+      "Bash(curl -s -L -k --max-time 10 \"https://jws.qgxy.cn/\")",
+      "Bash(curl -s -k --max-time 8 \"https://jws.qgxy.cn/img/captcha.jpg?123\" -o /tmp/captcha_test.jpg)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -L -k --max-time 10 \"https://jws.qgxy.cn/js/md5/md5.js\")"
+    ]
+  }
+}
